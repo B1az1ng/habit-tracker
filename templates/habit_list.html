@@ -22,7 +22,7 @@
       | <a href="{% url 'delete_habit' habit.id %}">Delete</a>
 
       {% if habit.streak > 1 %}
-        | 🔥 Streak: {{ habit.streak }} days
+        | 🔥 Streak: {{ habit.streak }} day{{ habit.streak|pluralize }}
       {% endif %}
     </li>
   {% empty %}
