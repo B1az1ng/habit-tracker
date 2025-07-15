@@ -12,12 +12,15 @@
     <li>
       <strong>{{ habit.name }}</strong>
       — {{ habit.done_today }}/{{ habit.target_per_day }} done today
+
       {% if habit.remaining_today %}
         | <a href="{% url 'complete_habit' habit.id %}">Mark as done</a>
       {% else %}
         | ✅ Completed for today
       {% endif %}
+
       | <a href="{% url 'delete_habit' habit.id %}">Delete</a>
+
       {% if habit.streak > 1 %}
         | 🔥 Streak: {{ habit.streak }} days
       {% endif %}

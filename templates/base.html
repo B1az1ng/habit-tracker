@@ -1,30 +1,33 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Habits Tracker</title>
+  <meta charset="UTF-8">
+  <title>Habits Tracker</title>
 </head>
 <body>
-    <h1>Habits Tracker</h1>
+  <h1>Habits Tracker</h1>
 
-    {% if user.is_authenticated %}
-        <p>Hello, {{ user.username }} |
-            <form method="post" action="{% url 'logout' %}" style="display:inline;">
-                {% csrf_token %}
-                <button type="submit" style="background:none; border:none; color:blue; cursor:pointer;">
-                    Logout
-                </button>
-            </form>
-        </p>
-    {% else %}
-        <p>
-            <a href="{% url 'login' %}">Login</a> |
-            <a href="{% url 'register' %}">Register</a>
-        </p>
-    {% endif %}
+  {% if user.is_authenticated %}
+    <p>
+      Hello, {{ user.username }} |
+      <form method="post" action="{% url 'logout' %}" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit"
+                style="background:none; border:none; padding:0; color:blue; text-decoration:underline; cursor:pointer;">
+          Logout
+        </button>
+      </form>
+    </p>
+  {% else %}
+    <p>
+      <a href="{% url 'login' %}">Login</a> |
+      <a href="{% url 'register' %}">Register</a>
+    </p>
+  {% endif %}
 
-    <hr>
+  <hr>
 
-    {% block content %}
-    {% endblock %}
+  {% block content %}
+  {% endblock %}
 </body>
 </html>
