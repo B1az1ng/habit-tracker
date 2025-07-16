@@ -44,3 +44,13 @@ class Habit(models.Model):
     @property
     def remaining_today(self):
         return max(self.target_per_day - self.done_today, 0)
+    
+class HabitRecord(models.Model):
+    habit     = models.ForeignKey(Habit, on_delete=models.CASCADE, related_name='records')
+    date      = models.DateField()
+    done      = models.PositiveIntegerField()
+    completed = models.BooleanField()
+
+    class Meta:
+        unique_together = ('habit', 'date')
+        ordering = ['-date']
