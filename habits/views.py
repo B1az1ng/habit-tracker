@@ -3,10 +3,12 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login as auth_login
 from django.utils import timezone
-from datetime import date
 from django.db import models
 
+from datetime import date
+
 from .models import Habit
+
 from .forms import HabitForm
 
 def home(request):
@@ -56,6 +58,13 @@ def complete_habit(request, habit_id):
     habit.save()
 
     return redirect('habit_list')
+
+@login_required
+def uncomplete_habit(request, habit_id):
+    habit = get_object_or_404(Habit, id=habit_id, user=request.user)
+    habit.unmark_done()
+    return redirect('habit_list')
+
 @login_required
 def delete_habit(request, habit_id):
     habit = get_object_or_404(Habit, id=habit_id, user=request.user)

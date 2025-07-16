@@ -10,13 +10,16 @@
 <ul>
   {% for habit in habits %}
     <li>
-      <strong>{{ habit.name }}</strong>
-      — {{ habit.done_today }}/{{ habit.target_per_day }} done today
+      <strong>{{ habit.name }}</strong> — {{ habit.done_today }}/{{ habit.target_per_day }} done today
 
       {% if habit.remaining_today %}
         | <a href="{% url 'complete_habit' habit.id %}">Mark as done</a>
       {% else %}
         | ✅ Completed for today
+      {% endif %}
+
+      {% if habit.done_today > 0 %}
+        | <a href="{% url 'uncomplete_habit' habit.id %}">Undo</a>
       {% endif %}
 
       | <a href="{% url 'delete_habit' habit.id %}">Delete</a>
@@ -29,6 +32,7 @@
     <li>No habits yet.</li>
   {% endfor %}
 </ul>
+
 
 <h3>Add a New Habit</h3>
 <form method="post">

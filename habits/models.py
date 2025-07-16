@@ -41,6 +41,21 @@ class Habit(models.Model):
 
         self.save()
 
+    def unmark_done(self):
+        """
+        Откат одного выполнения за сегодня.
+        Если мы в тот же день, уменьшаем done_today, и сбрасываем is_completed,
+        если цель не достигнута.
+        """
+        today = timezone.localdate()
+        # работаем только в тот же день, когда ставили отметку
+        if self.last_completed_date == today and self.done_today > 0:
+            self.done_today -= 1
+            # если теперь стало меньше target_per_day — сбрасываем флаг
+            if self.done_today < self.target_per_day:
+                self.is_completed = False
+            self.save()
+
     @property
     def remaining_today(self):
         return max(self.target_per_day - self.done_today, 0)
