@@ -17,7 +17,7 @@ class HabitViewsTest(TestCase):
         self.assertIn('/login/', resp.url)
 
     def test_add_and_delete_habit(self):
-        # добавляем привычку через POST на habit_list
+        # Добавляем привычку
         resp = self.client.post(
             reverse('habit_list'),
             {'name': 'Read', 'target_per_day': 2},
@@ -26,7 +26,7 @@ class HabitViewsTest(TestCase):
         self.assertContains(resp, 'Read')
         habit = Habit.objects.get(name='Read')
 
-        # удаляем
+        # Удаляем
         resp = self.client.get(
             reverse('delete_habit', args=[habit.id]),
             follow=True

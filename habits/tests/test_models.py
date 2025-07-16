@@ -14,7 +14,7 @@ class HabitModelTest(TestCase):
         )
 
     def test_mark_done_increments_and_completes(self):
-        # 1→2→3 отметки, completion только на третьей
+        # Проверяем: done_today растёт 1→2→3, и is_completed=True только на третьей отметке
         for i in range(3):
             self.habit.mark_done()
             self.habit.refresh_from_db()
@@ -22,31 +22,30 @@ class HabitModelTest(TestCase):
             self.assertEqual(self.habit.is_completed, (i+1) >= 3)
 
     def test_unmark_done_decrements_and_unsets(self):
-        # доводим до completion
+        # Доводим до completion
         for _ in range(3):
             self.habit.mark_done()
         self.habit.refresh_from_db()
         self.assertTrue(self.habit.is_completed)
 
-        # откатываем одну отметку
+        # Откатываем одну отметку — done_today станет 2, is_completed=False
         self.habit.unmark_done()
         self.habit.refresh_from_db()
         self.assertEqual(self.habit.done_today, 2)
         self.assertFalse(self.habit.is_completed)
 
     def test_mark_done_resets_on_new_day(self):
-        # первый день: делаем 2 отметки
+        # Первый день: делаем 2 отметки
         for _ in range(2):
             self.habit.mark_done()
         self.habit.refresh_from_db()
         self.assertEqual(self.habit.done_today, 2)
 
-        # эмулируем следующий день
-        today = timezone.localdate()
-        yesterday = today - timezone.timedelta(days=1)
-        # вручную правим дату последнего выполнения
+        # Эмулируем следующий день
+        yesterday = timezone.localdate() - timezone.timedelta(days=1)
         Habit.objects.filter(pk=self.habit.pk).update(last_completed_date=yesterday)
-        # теперь mark_done() должен сбросить done_today и поставить 1
+
+        # Теперь mark_done() должен сбросить счётчик и выставить done_today=1
         self.habit.mark_done()
         self.habit.refresh_from_db()
         self.assertEqual(self.habit.done_today, 1)

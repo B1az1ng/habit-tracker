@@ -1,69 +1,107 @@
 # habits/models.py
-
+from django.contrib.auth.models import User
 from django.db import models
+from django.db.models import F
 from django.contrib.auth.models import User
 from django.utils import timezone
 
+
 class Habit(models.Model):
-    user                = models.ForeignKey(User, on_delete=models.CASCADE)
-    name                = models.CharField(max_length=100)
-    target_per_day      = models.PositiveIntegerField(default=1)
-    done_today          = models.PositiveIntegerField(default=0)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    # Сколько раз нужно выполнить сегодня
+    target_per_day = models.PositiveIntegerField(default=1)
+    # Сколько уже выполнено сегодня
+    done_today = models.PositiveIntegerField(default=0)
+    # Дата последнего выполнения
     last_completed_date = models.DateField(null=True, blank=True)
-    streak              = models.PositiveIntegerField(default=0)
+    # Текущий стрик — дней подряд, когда цель достигалась
+    streak = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return self.name
 
+    @property
+    def is_completed(self):
+        """
+        True, если done_today >= target_per_day
+        """
+        return self.done_today >= self.target_per_day
+
+    @property
+    def remaining_today(self):
+        """
+        Сколько раз ещё осталось выполнить сегодня
+        """
+        return max(self.target_per_day - self.done_today, 0)
+
     def mark_done(self):
+        """
+        Отметить ещё одно выполнение сегодня.
+        Сбрасывает счётчик при смене дня, обновляет стрик.
+        """
+        # Обновим поля из базы, чтобы корректно обработать смену дня
+        self.refresh_from_db(fields=['last_completed_date', 'done_today', 'streak'])
         today = timezone.localdate()
 
-        # если мы в новый день — сбрасываем счётчик
+        # Если вчерашняя дата отличается от сегодня — начинаем новый день
         if self.last_completed_date != today:
             self.done_today = 0
+            self.last_completed_date = today
 
-        # фиксируем дату (чтобы в следующий раз не сбросило)
-        self.last_completed_date = today
-
-        # увеличиваем счётчик до target_per_day
+        # Увеличиваем счётчик до target_per_day
         if self.done_today < self.target_per_day:
             self.done_today += 1
 
-        # если сегодня уже полностью отработали привычку — считаем стрим
+        # Если сегодня уже выполнили цель — пересчитываем стрик
         if self.done_today >= self.target_per_day:
-            # предыдущий день подряд?
             yesterday = today - timezone.timedelta(days=1)
-            if Habit.objects.filter(user=self.user, last_completed_date=yesterday,
-                                    done_today__gte=models.F('target_per_day')).exists():
+            # Проверяем, был ли вчера стрик
+            if Habit.objects.filter(
+                user=self.user,
+                last_completed_date=yesterday,
+                done_today__gte=F('target_per_day')
+            ).exists():
                 self.streak += 1
             else:
                 self.streak = 1
 
+        # Сохраняем изменения
         self.save()
 
     def unmark_done(self):
         """
         Откат одного выполнения за сегодня.
-        Если мы в тот же день, уменьшаем done_today, и сбрасываем is_completed,
-        если цель не достигнута.
+        Уменьшает done_today, не трогает стрик и дату.
         """
         today = timezone.localdate()
-        # работаем только в тот же день, когда ставили отметку
         if self.last_completed_date == today and self.done_today > 0:
             self.done_today -= 1
-            # если теперь стало меньше target_per_day — сбрасываем флаг
-            if self.done_today < self.target_per_day:
-                self.is_completed = False
+            # Просто сохраняем — is_completed это свойство, авто‑сбросит статус
             self.save()
 
-    @property
-    def remaining_today(self):
-        return max(self.target_per_day - self.done_today, 0)
-    
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    avatar = models.ImageField(
+        upload_to='avatars/',    # файлы будут сохраняться в MEDIA_ROOT/avatars/
+        blank=True,
+        null=True
+    )
+
+    def __str__(self):
+        return f"{self.user.username} Profile"
+
+
 class HabitRecord(models.Model):
-    habit     = models.ForeignKey(Habit, on_delete=models.CASCADE, related_name='records')
-    date      = models.DateField()
-    done      = models.PositiveIntegerField()
+    habit = models.ForeignKey(
+        Habit,
+        on_delete=models.CASCADE,
+        related_name='records'
+    )
+    date = models.DateField()
+    # сколько раз сделал в этот день
+    done = models.PositiveIntegerField()
+    # достиг цели в этот день?
     completed = models.BooleanField()
 
     class Meta:
